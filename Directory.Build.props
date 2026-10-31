@@ -1,0 +1,71 @@
+<Project>
+  <!--
+    Shared build settings for every project in the solution.
+
+    One build per Revit year. Pick the year with the solution configuration:
+      Debug.R25 / Release.R25  -> Revit 2025 (.NET 8)
+      Debug.R26 / Release.R26  -> Revit 2026 (.NET 8)
+      Debug.R27 / Release.R27  -> Revit 2027 (.NET 10)
+    or from the command line: dotnet build -c Release.R26
+
+    Adding a new Revit year = add its configuration names below and, if
+    Autodesk changes the runtime, its TargetFramework in the block further down.
+  -->
+  <PropertyGroup>
+    <Configurations>Debug.R25;Release.R25;Debug.R26;Release.R26;Debug.R27;Release.R27</Configurations>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+
+    <!-- Single source of truth for the plugin version. The release pipeline overrides it with -p:Version=x.y.z -->
+    <Version>1.0.0</Version>
+    <Company>UnSet BIM</Company>
+    <Product>UnSet BIM</Product>
+    <Copyright>Copyright © UnSet BIM</Copyright>
+  </PropertyGroup>
+
+  <!-- Revit year from the configuration name -->
+  <PropertyGroup>
+    <RevitVersion Condition="$(Configuration.EndsWith('R25'))">2025</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R26'))">2026</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R27'))">2027</RevitVersion>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2025</RevitVersion>
+  </PropertyGroup>
+
+  <!-- Runtime per Revit year: 2025-2026 run on .NET 8, 2027 runs on .NET 10 -->
+  <PropertyGroup>
+    <TargetFramework Condition="'$(RevitVersion)' == '2025' Or '$(RevitVersion)' == '2026'">net8.0-windows</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(Configuration.StartsWith('Debug'))">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(Configuration.StartsWith('Release'))">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2026">$(DefineConstants);REVIT2026_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2027">$(DefineConstants);REVIT2027_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+    Folder of the installed Revit used to reference RevitAPI.dll, RevitAPIUI.dll and AdWindows.dll.
+    Override it when Revit is installed elsewhere: dotnet build -p:RevitInstallDir="D:\Autodesk\Revit 2026\"
+  -->
+  <PropertyGroup>
+    <RevitInstallDir Condition="'$(RevitInstallDir)' == ''">$(ProgramW6432)\Autodesk\Revit $(RevitVersion)\</RevitInstallDir>
+  </PropertyGroup>
+</Project>

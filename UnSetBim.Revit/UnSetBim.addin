@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+  Template of the Revit manifest. __ASSEMBLY__ is replaced by the absolute path of UnSetBim.Revit.dll
+  (by the debug build target and by the installer).
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>UnSet BIM</Name>
+    <Assembly>__ASSEMBLY__</Assembly>
+    <AddInId>BC663243-3565-44DC-9920-DC47898C57F6</AddInId>
+    <FullClassName>UnSetBim.Revit.App</FullClassName>
+    <VendorId>UNSET</VendorId>
+    <VendorDescription>UnSet BIM, https://unset.com.br</VendorDescription>
+  </AddIn>
+</RevitAddIns>

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Revit host add-in: the assembly referenced by the .addin manifest.
+    Boots the host services, builds the ribbon and starts every registered module.
+
+    Output: artifacts\<Configuration>\  (e.g. artifacts\Release.R26\)
+    That folder holds everything the installer must copy for that Revit year.
+  -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <UseRevitApi>true</UseRevitApi>
+    <RootNamespace>UnSetBim.Revit</RootNamespace>
+    <AssemblyName>UnSetBim.Revit</AssemblyName>
+    <!-- Plugin-style output: copies NuGet dependencies next to the add-in DLL -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <OutputPath>..\artifacts\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Framework\UnSetBim.Framework.csproj" />
+    <ProjectReference Include="..\UnSetBim.Modules.Families\UnSetBim.Modules.Families.csproj" />
+  </ItemGroup>
+
+  <!--
+    Debug convenience: write a .addin into the current user's Revit add-ins folder
+    pointing at this build output, so F5 (start Revit) loads the fresh build.
+    Release builds never touch the user's add-ins folder: the installer does that.
+  -->
+  <Target Name="UnSetDeployDebugAddin" AfterTargets="Build" Condition="$(Configuration.StartsWith('Debug'))">
+    <PropertyGroup>
+      <UnSetAddinDir>$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\</UnSetAddinDir>
+      <UnSetAssemblyPath>$([System.IO.Path]::GetFullPath('$(OutDir)$(AssemblyName).dll'))</UnSetAssemblyPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(UnSetAddinDir)" />
+    <WriteLinesToFile File="$(UnSetAddinDir)UnSetBIM.addin" Overwrite="true" Lines="$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\UnSetBim.addin').Replace('__ASSEMBLY__', '$(UnSetAssemblyPath)'))" />
+    <Message Importance="high" Text="UnSet BIM: debug manifest written to $(UnSetAddinDir)UnSetBIM.addin" />
+  </Target>
+</Project>

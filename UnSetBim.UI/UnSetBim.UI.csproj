@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    UI: shared WPF theme, MVVM helpers, converters and controls.
+    No Revit dependency, so it can also be used by the installer or tests.
+  -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>UnSetBim.UI</RootNamespace>
+    <AssemblyName>UnSetBim.UI</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Core\UnSetBim.Core.csproj" />
+  </ItemGroup>
+</Project>

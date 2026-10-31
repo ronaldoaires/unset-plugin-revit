@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Families module: browse the UnSet BIM catalog, download and load families into the project. -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <UseRevitApi>true</UseRevitApi>
+    <RootNamespace>UnSetBim.Modules.Families</RootNamespace>
+    <AssemblyName>UnSetBim.Modules.Families</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Framework\UnSetBim.Framework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\*.png" />
+  </ItemGroup>
+</Project>

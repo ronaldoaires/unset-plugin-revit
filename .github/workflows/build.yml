@@ -1,0 +1,26 @@
+# Compiles every Revit year on pushes and pull requests to main.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: [Release.R25, Release.R26, Release.R27]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build
+        run: dotnet build UnSetBim.slnx -c ${{ matrix.configuration }} -p:UseRevitApiPackages=true --nologo

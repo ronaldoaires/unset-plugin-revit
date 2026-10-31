@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Core: everything that does not depend on Revit or WPF.
+    API client (docs/api.md v1), session storage, update check, paths, logging.
+  -->
+  <PropertyGroup>
+    <RootNamespace>UnSetBim.Core</RootNamespace>
+    <AssemblyName>UnSetBim.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DPAPI to protect the API token at rest -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+</Project>

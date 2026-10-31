@@ -1,0 +1,8 @@
+# Ignore build output
+bin/
+obj/
+artifacts/
+.vs/
+*.user
+_legacy-plugin-v0/
+installer/output/

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Framework: the Revit-aware layer shared by every module.
+    Module contract, host services, session/sign-in, update flow,
+    Revit thread dispatcher and the base command class.
+  -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <UseRevitApi>true</UseRevitApi>
+    <RootNamespace>UnSetBim.Framework</RootNamespace>
+    <AssemblyName>UnSetBim.Framework</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Core\UnSetBim.Core.csproj" />
+    <ProjectReference Include="..\UnSetBim.UI\UnSetBim.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\*.png" />
+  </ItemGroup>
+</Project>

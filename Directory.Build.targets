@@ -1,0 +1,38 @@
+<Project>
+  <!--
+    Projects that talk to Revit set <UseRevitApi>true</UseRevitApi>.
+
+    Where the Revit API comes from:
+      - the installed Revit, when RevitAPI.dll exists in $(RevitInstallDir) (developer machine);
+      - otherwise the Nice3point.Revit.Api.* NuGet packages of that Revit year (CI, or a machine
+        without that Revit year). Force the packages with -p:UseRevitApiPackages=true.
+
+    Either way the Revit assemblies are compile-time references only and are never copied to the
+    output: Revit loads its own copies at runtime.
+  -->
+  <PropertyGroup Condition="'$(UseRevitApi)' == 'true' And '$(UseRevitApiPackages)' == ''">
+    <UseRevitApiPackages Condition="Exists('$(RevitInstallDir)RevitAPI.dll')">false</UseRevitApiPackages>
+    <UseRevitApiPackages Condition="!Exists('$(RevitInstallDir)RevitAPI.dll')">true</UseRevitApiPackages>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseRevitApi)' == 'true' And '$(UseRevitApiPackages)' != 'true'">
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>$(RevitInstallDir)AdWindows.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseRevitApi)' == 'true' And '$(UseRevitApiPackages)' == 'true'">
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.AdWindows" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

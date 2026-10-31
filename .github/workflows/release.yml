@@ -1,0 +1,72 @@
+# Publishes a release when a version tag is pushed:
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# Builds every Revit year (Revit API from NuGet, Revit is not installed here),
+# builds the Inno Setup installer and creates the GitHub Release with exactly one
+# .exe asset. The UnSet BIM API announces it within 15 minutes (GET /plugin/latest).
+#
+# Release notes (Portuguese, shown to users): docs/releases/vX.Y.Z.md
+# Betas: publish normally, then mark the release as "pre-release" on GitHub.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') { throw "Tag must be vMAJOR.MINOR.PATCH (got '$tag')." }
+          "value=$($tag.Substring(1))" >> $env:GITHUB_OUTPUT
+
+      - name: Build add-in (Revit 2025, 2026, 2027)
+        shell: pwsh
+        run: |
+          foreach ($c in 'Release.R25', 'Release.R26', 'Release.R27') {
+            dotnet build UnSetBim.slnx -c $c -p:Version=${{ steps.version.outputs.value }} -p:UseRevitApiPackages=true --nologo
+            if ($LASTEXITCODE -ne 0) { throw "Build failed for $c." }
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.version.outputs.value }}" installer\UnSetBIM.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $tag = '${{ github.ref_name }}'
+          $notes = "docs/releases/$tag.md"
+          if (-not (Test-Path $notes)) {
+            $notes = 'release-notes.md'
+            "Versão $version do plugin UnSet BIM para Revit." | Set-Content $notes -Encoding utf8
+          }
+          gh release create $tag "installer/output/UnSetBIM-Setup-$version.exe" --title "UnSet BIM v$version" --notes-file $notes

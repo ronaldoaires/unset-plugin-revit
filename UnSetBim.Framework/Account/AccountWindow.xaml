@@ -1,0 +1,125 @@
+<Window x:Class="UnSetBim.Framework.Account.AccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:UnSetBim.Framework.Account"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:AccountViewModel}"
+        Title="UnSet BIM — Minha conta"
+        Width="440"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UnSetBim.UI;component/Themes/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <StackPanel Margin="28,26,28,22">
+
+        <!-- User -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Width="44" Height="44" CornerRadius="22" Background="{StaticResource Accent}">
+                <TextBlock Text="{Binding UserName, Converter={StaticResource Initial}}" FontSize="18" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding UserName}" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding UserEmail}" FontSize="12.5"
+                           Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Plan -->
+        <Border Style="{StaticResource Card}" Margin="0,20,0,0" Padding="16,14">
+            <StackPanel>
+                <Grid>
+                    <TextBlock Text="ASSINATURA" Style="{StaticResource SectionLabel}"/>
+                    <Border HorizontalAlignment="Right" CornerRadius="6" Padding="8,2">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{StaticResource WarningDim}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasAccess}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SuccessDim}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding StatusLabel}" FontSize="11" FontWeight="SemiBold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource Warning}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasAccess}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource Success}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                </Grid>
+
+                <TextBlock Text="{Binding PlanName}" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}" Margin="0,8,0,0"/>
+                <TextBlock Text="{Binding SubscriptionDetail}" Style="{StaticResource BodyText}" FontSize="12.5" Margin="0,4,0,0"
+                           Visibility="{Binding SubscriptionDetail, Converter={StaticResource HasValueToVis}}"/>
+
+                <!-- Quota -->
+                <StackPanel Margin="0,14,0,0" Visibility="{Binding HasQuota, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding QuotaText}" FontSize="12.5" Foreground="{StaticResource TextSecondary}"/>
+                    <ProgressBar Style="{StaticResource ThinProgress}" Margin="0,8,0,0" Maximum="100"
+                                 Value="{Binding QuotaPercent, Mode=OneWay}"
+                                 Visibility="{Binding HasQuotaLimit, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="{Binding QuotaResetText}" FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <TextBlock Margin="0,14,0,0" FontSize="12" Foreground="{StaticResource TextMuted}">
+                    <Run Text="Módulos: "/><Run Text="{Binding ModulesText, Mode=OneWay}" Foreground="{StaticResource TextSecondary}"/>
+                </TextBlock>
+
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource SecondaryButton}" Content="Gerenciar assinatura"
+                            Command="{Binding ManageSubscriptionCommand}"
+                            Visibility="{Binding HasAccess, Converter={StaticResource BoolToVis}}"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Ver planos"
+                            Command="{Binding PlansCommand}"
+                            Visibility="{Binding HasNoAccess, Converter={StaticResource BoolToVis}}"/>
+                    <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="↻ Atualizar"
+                            ToolTip="Atualizar dados da assinatura" Command="{Binding RefreshCommand}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Actions -->
+        <Grid Margin="0,18,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Style="{StaticResource LinkButton}" Content="Abrir minha conta no site" VerticalAlignment="Center"
+                    Command="{Binding OpenAccountCommand}"/>
+            <Button Grid.Column="1" Style="{StaticResource DangerButton}" Content="Sair da conta"
+                    Command="{Binding SignOutCommand}"/>
+        </Grid>
+
+        <TextBlock Text="{Binding VersionText}" FontSize="11" Foreground="{StaticResource TextMuted}"
+                   HorizontalAlignment="Center" Margin="0,20,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+    </StackPanel>
+</Window>
