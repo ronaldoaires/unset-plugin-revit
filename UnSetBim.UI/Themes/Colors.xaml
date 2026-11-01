@@ -24,11 +24,12 @@
     <SolidColorBrush x:Key="TextMuted"       Color="#6E6E7E"/>
 
     <!-- Brand accent -->
-    <SolidColorBrush x:Key="Accent"          Color="#0078D4"/>
-    <SolidColorBrush x:Key="AccentHover"     Color="#1A88E0"/>
-    <SolidColorBrush x:Key="AccentPressed"   Color="#006AC0"/>
-    <SolidColorBrush x:Key="AccentLight"     Color="#60B8FF"/>
-    <SolidColorBrush x:Key="AccentDim"       Color="#1A0078D4"/>
+    <!-- #402399 is the UnSet BIM brand color. AccentLight is the readable variant for text/lines on the dark background. -->
+    <SolidColorBrush x:Key="Accent"          Color="#402399"/>
+    <SolidColorBrush x:Key="AccentHover"     Color="#5230B5"/>
+    <SolidColorBrush x:Key="AccentPressed"   Color="#351D80"/>
+    <SolidColorBrush x:Key="AccentLight"     Color="#A891F0"/>
+    <SolidColorBrush x:Key="AccentDim"       Color="#33402399"/>
 
     <!-- Semantic -->
     <SolidColorBrush x:Key="Success"         Color="#22C55E"/>
@@ -44,7 +45,7 @@
     <SolidColorBrush x:Key="ScrollThumbHover" Color="#52525F"/>
 
     <LinearGradientBrush x:Key="LogoGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0A4FA8" Offset="0"/>
-        <GradientStop Color="#0078D4" Offset="1"/>
+        <GradientStop Color="#2A1766" Offset="0"/>
+        <GradientStop Color="#5230B5" Offset="1"/>
     </LinearGradientBrush>
 </ResourceDictionary>

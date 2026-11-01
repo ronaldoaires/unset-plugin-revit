@@ -11,17 +11,30 @@ public enum PriceKind
     SubscribersOnly,
 }
 
+/// <summary>Main button of a card.</summary>
+public enum CardAction
+{
+    Download,
+    Buy,
+    Subscribe,
+}
+
 /// <summary>One card of the catalog grid.</summary>
 public sealed class FamilyCardViewModel : ObservableObject
 {
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
     private bool _isFavorite;
     private bool _isSelected;
+    private bool _isBusy;
+    private bool _isUnlocked;
+    private readonly bool _hasAccess;
 
-    public FamilyCardViewModel(FamilySummary family, int revitYear)
+    /// <param name="hasAccess">The user has an active subscription (paid families count in the quota).</param>
+    public FamilyCardViewModel(FamilySummary family, int revitYear, bool hasAccess)
     {
         Model = family;
         _isFavorite = family.IsFavorite;
+        _hasAccess = hasAccess;
         IsCompatible = family.RevitVersion <= 0 || family.RevitVersion <= revitYear;
     }
 
@@ -83,5 +96,61 @@ public sealed class FamilyCardViewModel : ObservableObject
     {
         get => _isSelected;
         set => SetProperty(ref _isSelected, value);
+    }
+
+    // ── Card button ──────────────────────────────────────
+
+    /// <summary>
+    /// Best guess from the list data; the server decides on click (detail → download.allowed).
+    /// Families already downloaded (history) or confirmed allowed are treated as downloadable.
+    /// </summary>
+    public CardAction Action
+    {
+        get
+        {
+            if (Model.IsFree || _hasAccess || _isUnlocked || Model.LastDownloadedAt is not null)
+                return CardAction.Download;
+
+            return PriceKind == PriceKind.Paid ? CardAction.Buy : CardAction.Subscribe;
+        }
+    }
+
+    public string ActionText => IsBusy
+        ? (Action == CardAction.Download ? "Baixando…" : "Abrindo…")
+        : Action switch
+        {
+            CardAction.Download => "↓  Baixar",
+            CardAction.Buy => "Comprar  ↗",
+            _ => "Assinar  ↗",
+        };
+
+    public bool CanRunAction => IsCompatible && !IsBusy;
+
+    /// <summary>The card button is loading the detail or downloading.</summary>
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                OnPropertyChanged(nameof(ActionText));
+                OnPropertyChanged(nameof(CanRunAction));
+            }
+        }
+    }
+
+    /// <summary>Set when the server confirmed the download is allowed (e.g. a family bought on the site).</summary>
+    public bool IsUnlocked
+    {
+        get => _isUnlocked;
+        set
+        {
+            if (SetProperty(ref _isUnlocked, value))
+            {
+                OnPropertyChanged(nameof(Action));
+                OnPropertyChanged(nameof(ActionText));
+            }
+        }
     }
 }

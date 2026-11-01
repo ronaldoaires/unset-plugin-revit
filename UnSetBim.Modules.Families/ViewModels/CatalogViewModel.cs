@@ -20,7 +20,7 @@ public enum CatalogTab
 }
 
 /// <summary>
-/// Families window: sidebar with categories, filters, paginated grid, detail panel,
+/// Families window: sidebar with categories, filters, paginated grid, detail modal,
 /// and the "Favoritos" / "Meus downloads" lists (docs/api.md 5 and 7).
 /// Every catalog request sends revit_version = running Revit year.
 /// </summary>
@@ -83,6 +83,7 @@ public sealed class CatalogViewModel : ObservableObject, IDisposable
         PreviousPageCommand = new AsyncRelayCommand(() => LoadPageAsync(CurrentPage - 1), () => !IsLoading && CurrentPage > 1);
         RetryCommand = new AsyncRelayCommand(InitializeAsync);
         SelectFamilyCommand = new AsyncRelayCommand<FamilyCardViewModel>(SelectFamilyAsync);
+        CardActionCommand = new AsyncRelayCommand<FamilyCardViewModel>(CardActionAsync);
         ToggleFavoriteCommand = new AsyncRelayCommand<FamilyCardViewModel>(ToggleFavoriteAsync);
         CloseDetailCommand = new RelayCommand(() => Detail = null);
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
@@ -111,6 +112,7 @@ public sealed class CatalogViewModel : ObservableObject, IDisposable
     public ICommand PreviousPageCommand { get; }
     public ICommand RetryCommand { get; }
     public ICommand SelectFamilyCommand { get; }
+    public ICommand CardActionCommand { get; }
     public ICommand ToggleFavoriteCommand { get; }
     public ICommand CloseDetailCommand { get; }
     public ICommand ClearFiltersCommand { get; }
@@ -450,8 +452,9 @@ public sealed class CatalogViewModel : ObservableObject, IDisposable
                 return;
 
             Families.Clear();
+            var hasAccess = _host.Session.Access.HasAccess;
             foreach (var family in result.Data)
-                Families.Add(new FamilyCardViewModel(family, _host.RevitYear));
+                Families.Add(new FamilyCardViewModel(family, _host.RevitYear, hasAccess));
 
             CurrentPage = result.Meta.CurrentPage;
             LastPage = Math.Max(result.Meta.LastPage, 1);
@@ -564,6 +567,59 @@ public sealed class CatalogViewModel : ObservableObject, IDisposable
         var detail = new FamilyDetailViewModel(_host, card, ToggleFavoriteAsync);
         Detail = detail;
         await detail.LoadAsync();
+    }
+
+    /// <summary>
+    /// Card button. Loads the detail (server decision) and then: inserts when allowed, opens the purchase page
+    /// when the family can be bought, otherwise opens the detail modal with the reason and the plans button.
+    /// The modal also opens when the insert needs the user's attention (error, no open project, loaded only).
+    /// </summary>
+    private async Task CardActionAsync(FamilyCardViewModel card)
+    {
+        if (card is null || card.IsBusy || !card.IsCompatible)
+            return;
+
+        card.IsBusy = true;
+        var detail = new FamilyDetailViewModel(_host, card, ToggleFavoriteAsync);
+        var showModal = false;
+
+        try
+        {
+            await detail.LoadAsync();
+
+            if (detail.CanInsert)
+            {
+                card.IsUnlocked = true;
+                detail.PlacementStarted += OnPlacementStarted;
+                try
+                {
+                    await detail.InsertAsync();
+                }
+                finally
+                {
+                    detail.PlacementStarted -= OnPlacementStarted;
+                }
+
+                showModal = detail.LastOutcome is not (RevitApi.PlacementOutcome.PlacementStarted or RevitApi.PlacementOutcome.Cancelled);
+            }
+            else if (detail.PurchaseUrl is { } url)
+            {
+                Browser.Open(url);
+            }
+            else
+            {
+                showModal = true;
+            }
+        }
+        finally
+        {
+            card.IsBusy = false;
+
+            if (showModal)
+                Detail = detail;
+            else
+                detail.Dispose();
+        }
     }
 
     private async Task ToggleFavoriteAsync(FamilyCardViewModel card)

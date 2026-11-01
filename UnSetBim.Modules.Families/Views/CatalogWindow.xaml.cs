@@ -27,6 +27,9 @@ public partial class CatalogWindow : Window
         // Ctrl+F focuses the search box.
         InputBindings.Add(new KeyBinding(new FocusSearchCommand(this), Key.F, ModifierKeys.Control));
 
+        // Esc closes the detail modal.
+        InputBindings.Add(new KeyBinding(viewModel.CloseDetailCommand, Key.Escape, ModifierKeys.None));
+
         Loaded += async (_, _) => await _viewModel.InitializeAsync();
         Closed += (_, _) =>
         {

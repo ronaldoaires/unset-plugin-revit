@@ -61,3 +61,28 @@ public sealed class InitialConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>
+/// Available width → number of grid columns, so cards fill the whole row (UniformGrid.Columns).
+/// ConverterParameter = minimum card width in pixels (default 220). Includes the 14 px gap between cards.
+/// </summary>
+public sealed class WidthToColumnsConverter : IValueConverter
+{
+    private const double Gap = 14;
+
+    // Room left for the overlay scrollbar.
+    private const double ScrollbarReserve = 8;
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var minWidth = parameter is string p && double.TryParse(p, NumberStyles.Float, CultureInfo.InvariantCulture, out var m) ? m : 220;
+
+        if (value is not double width || double.IsNaN(width) || width <= 0)
+            return 1;
+
+        return Math.Max(1, (int)Math.Floor((width - ScrollbarReserve) / (minWidth + Gap)));
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

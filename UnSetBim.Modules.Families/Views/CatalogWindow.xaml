@@ -108,7 +108,7 @@
             <Style x:Key="PriceBadge" TargetType="Border">
                 <Setter Property="CornerRadius" Value="5"/>
                 <Setter Property="Padding" Value="8,3"/>
-                <Setter Property="Background" Value="#7C3AED"/>
+                <Setter Property="Background" Value="#B45309"/>
                 <Setter Property="Effect">
                     <Setter.Value>
                         <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35" Color="Black"/>
@@ -119,7 +119,7 @@
                         <Setter Property="Background" Value="#16A34A"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding PriceKind}" Value="{x:Static vm:PriceKind.Paid}">
-                        <Setter Property="Background" Value="#0078D4"/>
+                        <Setter Property="Background" Value="{StaticResource Accent}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -138,6 +138,83 @@
                         <Setter Property="Background" Value="#15803D"/>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+
+            <!-- Card main button: brand color to download, green to buy -->
+            <Style x:Key="CardActionButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="FontSize" Value="12.5"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Action}" Value="{x:Static vm:CardAction.Buy}">
+                        <Setter Property="Background" Value="#16A34A"/>
+                        <Setter Property="BorderBrush" Value="#16A34A"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Action}" Value="{x:Static vm:CardAction.Subscribe}">
+                        <Setter Property="Background" Value="#B45309"/>
+                        <Setter Property="BorderBrush" Value="#B45309"/>
+                    </DataTrigger>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding Action}" Value="{x:Static vm:CardAction.Subscribe}"/>
+                            <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Background" Value="#C9650F"/>
+                        <Setter Property="BorderBrush" Value="#C9650F"/>
+                    </MultiDataTrigger>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding Action}" Value="{x:Static vm:CardAction.Buy}"/>
+                            <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Background" Value="#22B357"/>
+                        <Setter Property="BorderBrush" Value="#22B357"/>
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Subscribe call to action: amber, same color as the ASSINANTES badge -->
+            <Style x:Key="SubscribeButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                <Setter Property="Background" Value="#B45309"/>
+                <Setter Property="BorderBrush" Value="#B45309"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#C9650F"/>
+                        <Setter Property="BorderBrush" Value="#C9650F"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#92400E"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="CardDetailsButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Padding" Value="12,0"/>
+                <Setter Property="FontSize" Value="12.5"/>
+            </Style>
+
+            <!-- Round dark button over the white image (modal close) -->
+            <Style x:Key="CloseRoundButton" TargetType="Button">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="ToolTip" Value="Fechar (Esc)"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{StaticResource BgElevated}" CornerRadius="16" Width="32" Height="32">
+                                <TextBlock Text="✕" FontSize="12" Foreground="{StaticResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource BorderMid}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style x:Key="MetaLabel" TargetType="TextBlock">
@@ -212,7 +289,6 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="240"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- ── SIDEBAR ── -->
@@ -245,7 +321,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock x:Name="Label" Text="{Binding Label}" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding CountText}" FontSize="11.5" Opacity="0.7" Margin="8,0,0,0"/>
+                                        <!-- Family count hidden for now (NavItem.CountText is still available). -->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding IsSubcategory}" Value="True">
@@ -277,8 +353,7 @@
                 <StackPanel>
                     <TextBlock Text="{Binding ListTitle}" Style="{StaticResource TitleText}" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Margin="0,3,0,0" FontSize="12.5" Foreground="{StaticResource TextMuted}">
-                        <Run Text="{Binding TotalText, Mode=OneWay}"/>
-                        <Run Text=" · "/>
+                        <!-- Family total hidden for now (CatalogViewModel.TotalText is still available). -->
                         <Run Text="{Binding RevitText, Mode=OneWay}"/>
                     </TextBlock>
                 </StackPanel>
@@ -325,19 +400,21 @@
                         <ItemsControl ItemsSource="{Binding Families}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
+                                    <!-- Columns follow the available width so the row is always filled (min card width 230). -->
+                                    <UniformGrid VerticalAlignment="Top"
+                                                 Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource WidthToColumns}, ConverterParameter=230}"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:FamilyCardViewModel}">
-                                    <Button Style="{StaticResource CardButton}" Width="214" Margin="0,0,14,14"
+                                    <Button Style="{StaticResource CardButton}" Margin="0,0,14,14"
                                             Command="{Binding DataContext.SelectFamilyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}">
-                                        <StackPanel>
-                                            <Grid Height="160" Background="White">
+                                        <DockPanel>
+                                            <Grid DockPanel.Dock="Top" Height="170" Background="White">
                                                 <TextBlock Text="▦" FontSize="34" Foreground="#D4D4D8"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                <Image ui:RemoteImage.Url="{Binding ThumbnailUrl}" ui:RemoteImage.DecodeWidth="430"
+                                                <Image ui:RemoteImage.Url="{Binding ThumbnailUrl}" ui:RemoteImage.DecodeWidth="520"
                                                        Stretch="Uniform" Margin="8,30,8,8" RenderOptions.BitmapScalingMode="HighQuality"/>
 
                                                 <Border Style="{StaticResource PriceBadge}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10">
@@ -348,27 +425,37 @@
                                                         CommandParameter="{Binding}"/>
                                             </Grid>
 
+                                            <!-- Buttons stay at the bottom so they line up across the row -->
+                                            <Grid DockPanel.Dock="Bottom" Margin="12,0,12,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Style="{StaticResource CardDetailsButton}" Content="Detalhes"
+                                                        Command="{Binding DataContext.SelectFamilyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Grid.Column="2" Style="{StaticResource CardActionButton}"
+                                                        IsEnabled="{Binding CanRunAction}"
+                                                        Command="{Binding DataContext.CardActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}">
+                                                    <TextBlock Text="{Binding ActionText}" TextTrimming="CharacterEllipsis"/>
+                                                </Button>
+                                            </Grid>
+
                                             <StackPanel Margin="12,10,12,12">
                                                 <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
                                                            Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap"
                                                            MaxHeight="36" TextTrimming="CharacterEllipsis" LineHeight="18"/>
                                                 <TextBlock Text="{Binding CategoryText}" FontSize="11.5" Foreground="{StaticResource TextMuted}"
                                                            Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
-                                                <WrapPanel Margin="0,8,0,0">
-                                                    <Border Style="{StaticResource Chip}">
-                                                        <TextBlock Text="{Binding RevitVersionText}" FontSize="10.5" Foreground="{StaticResource AccentLight}"/>
-                                                    </Border>
-                                                    <Border Style="{StaticResource Chip}"
-                                                            Visibility="{Binding IsParametric, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="Paramétrica" FontSize="10.5" Foreground="{StaticResource TextSecondary}"/>
-                                                    </Border>
-                                                </WrapPanel>
                                                 <TextBlock Text="{Binding HistoryText}" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,6,0,0"
                                                            Visibility="{Binding HistoryText, Converter={StaticResource HasValueToVis}}"/>
                                                 <TextBlock Text="Requer uma versão mais nova do Revit" FontSize="11" Foreground="{StaticResource Warning}" Margin="0,6,0,0"
+                                                           TextWrapping="Wrap"
                                                            Visibility="{Binding IsCompatible, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
                                             </StackPanel>
-                                        </StackPanel>
+                                        </DockPanel>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -408,104 +495,112 @@
                 </Grid>
             </Grid>
 
-            <!-- ── DETAIL PANEL ── -->
-            <Border Grid.Column="2" Width="370" Background="{StaticResource BgSurface}"
-                    BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1,0,0,0"
-                    DataContext="{Binding Detail}"
-                    Visibility="{Binding Converter={StaticResource HasValueToVis}}">
+        </Grid>
+
+        <!-- ════ DETAIL MODAL ════ -->
+        <Grid Grid.RowSpan="2" Panel.ZIndex="10"
+              Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}">
+            <!-- Backdrop: click outside closes -->
+            <Border Background="#B3000000">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDetailCommand}"/>
+                </Border.InputBindings>
+            </Border>
+
+            <Border Width="860" Margin="40" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Background="{StaticResource BgSurface}" BorderBrush="{StaticResource BorderMid}" BorderThickness="1"
+                    CornerRadius="12" DataContext="{Binding Detail}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+                </Border.Effect>
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="360"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <!-- Fixed content height: same modal size for every family; long text scrolls -->
+                        <RowDefinition Height="360"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <ScrollViewer Style="{StaticResource MinimalScrollViewer}" VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <Grid Height="230" Background="White">
-                                <TextBlock Text="▦" FontSize="44" Foreground="#D4D4D8"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Image ui:RemoteImage.Url="{Binding ImageUrl}" ui:RemoteImage.DecodeWidth="740"
-                                       Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                <Button Style="{StaticResource HeartButton}" DataContext="{Binding Card}"
-                                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
-                                        Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"/>
-                                <Button Style="{StaticResource HeartButton}" Content="" ToolTip="Fechar"
-                                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10"
-                                        Command="{Binding DataContext.CloseDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Bd" Background="#B30E0E12" CornerRadius="15" Width="30" Height="30">
-                                                <TextBlock Text="✕" FontSize="12" Foreground="White"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#E60E0E12"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                    <!-- Image -->
+                    <Border Background="White" CornerRadius="11,0,0,0">
+                        <Grid>
+                            <TextBlock Text="▦" FontSize="44" Foreground="#D4D4D8"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Image ui:RemoteImage.Url="{Binding ImageUrl}" ui:RemoteImage.DecodeWidth="800"
+                                   Stretch="Uniform" Margin="28" MaxHeight="280" MaxWidth="300"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <Button Style="{StaticResource HeartButton}" DataContext="{Binding Card}"
+                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12"
+                                    Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Info -->
+                    <ScrollViewer Grid.Column="1" Style="{StaticResource MinimalScrollViewer}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="24,20,24,20">
+                            <TextBlock Text="{Binding CategoryText}" FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,0,40,0"/>
+                            <TextBlock Text="{Binding Name}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                       TextWrapping="Wrap" Margin="0,4,40,0" LineHeight="25"/>
+                            <Border Style="{StaticResource PriceBadge}" DataContext="{Binding Card}"
+                                    HorizontalAlignment="Left" Margin="0,10,0,0">
+                                <TextBlock Text="{Binding PriceText}" FontSize="11.5" FontWeight="SemiBold" Foreground="White"/>
+                            </Border>
+
+                            <!-- Loading / load error -->
+                            <ProgressBar Style="{StaticResource ThinProgress}" IsIndeterminate="True" Margin="0,16,0,0"
+                                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+                            <Border Style="{StaticResource ErrorBanner}" Margin="0,16,0,0"
+                                    Visibility="{Binding LoadError, Converter={StaticResource HasValueToVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding LoadError}" Foreground="{StaticResource Danger}" FontSize="12.5" TextWrapping="Wrap"/>
+                                    <Button Style="{StaticResource LinkButton}" Content="Tentar novamente" Margin="0,6,0,0"
+                                            HorizontalAlignment="Left" Command="{Binding RetryCommand}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Metadata -->
+                            <Grid Margin="0,18,0,0" Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition/><RowDefinition/>
+                                    <RowDefinition/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Versão mínima" Style="{StaticResource MetaLabel}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RevitVersionText}" Style="{StaticResource MetaValue}"/>
+                                <TextBlock Grid.Row="1" Text="Paramétrica" Style="{StaticResource MetaLabel}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ParametricText}" Style="{StaticResource MetaValue}"/>
+                                <TextBlock Grid.Row="2" Text="Marca" Style="{StaticResource MetaLabel}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BrandText}" Style="{StaticResource MetaValue}"/>
+                                <TextBlock Grid.Row="3" Text="Tamanho do arquivo" Style="{StaticResource MetaLabel}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SizeText}" Style="{StaticResource MetaValue}"/>
+                                <TextBlock Grid.Row="4" Text="Downloads" Style="{StaticResource MetaLabel}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DownloadCountText}" Style="{StaticResource MetaValue}"/>
                             </Grid>
 
-                            <StackPanel Margin="20,16,20,16">
-                                <TextBlock Text="{Binding CategoryText}" FontSize="11.5" Foreground="{StaticResource TextMuted}"/>
-                                <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
-                                           TextWrapping="Wrap" Margin="0,4,0,0" LineHeight="23"/>
-                                <Border Style="{StaticResource PriceBadge}" DataContext="{Binding Card}"
-                                        HorizontalAlignment="Left" Margin="0,10,0,0">
-                                    <TextBlock Text="{Binding PriceText}" FontSize="11.5" FontWeight="SemiBold" Foreground="White"/>
-                                </Border>
+                            <TextBlock Text="{Binding Description}" Style="{StaticResource BodyText}" FontSize="12.5" Margin="0,10,0,0"
+                                       Visibility="{Binding Description, Converter={StaticResource HasValueToVis}}"/>
+                            <TextBlock Text="{Binding TagsText}" FontSize="11.5" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,12,0,0"
+                                       Visibility="{Binding TagsText, Converter={StaticResource HasValueToVis}}"/>
 
-                                <!-- Loading / load error -->
-                                <ProgressBar Style="{StaticResource ThinProgress}" IsIndeterminate="True" Margin="0,16,0,0"
-                                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
-                                <Border Style="{StaticResource ErrorBanner}" Margin="0,16,0,0"
-                                        Visibility="{Binding LoadError, Converter={StaticResource HasValueToVis}}">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding LoadError}" Foreground="{StaticResource Danger}" FontSize="12.5" TextWrapping="Wrap"/>
-                                        <Button Style="{StaticResource LinkButton}" Content="Tentar novamente" Margin="0,6,0,0"
-                                                HorizontalAlignment="Left" Command="{Binding RetryCommand}"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Metadata -->
-                                <Grid Margin="0,18,0,0" Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVis}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition/><RowDefinition/><RowDefinition/>
-                                        <RowDefinition/><RowDefinition/>
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Versão mínima" Style="{StaticResource MetaLabel}"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RevitVersionText}" Style="{StaticResource MetaValue}"/>
-                                    <TextBlock Grid.Row="1" Text="Paramétrica" Style="{StaticResource MetaLabel}"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ParametricText}" Style="{StaticResource MetaValue}"/>
-                                    <TextBlock Grid.Row="2" Text="Marca" Style="{StaticResource MetaLabel}"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BrandText}" Style="{StaticResource MetaValue}"/>
-                                    <TextBlock Grid.Row="3" Text="Tamanho do arquivo" Style="{StaticResource MetaLabel}"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SizeText}" Style="{StaticResource MetaValue}"/>
-                                    <TextBlock Grid.Row="4" Text="Downloads" Style="{StaticResource MetaLabel}"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DownloadCountText}" Style="{StaticResource MetaValue}"/>
-                                </Grid>
-
-                                <TextBlock Text="{Binding Description}" Style="{StaticResource BodyText}" FontSize="12.5" Margin="0,10,0,0"
-                                           Visibility="{Binding Description, Converter={StaticResource HasValueToVis}}"/>
-                                <TextBlock Text="{Binding TagsText}" FontSize="11.5" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,12,0,0"
-                                           Visibility="{Binding TagsText, Converter={StaticResource HasValueToVis}}"/>
-
-                                <Button Style="{StaticResource LinkButton}" Content="Ver página da família no site ↗" Margin="0,14,0,0"
-                                        HorizontalAlignment="Left" Command="{Binding OpenPageCommand}"/>
-                            </StackPanel>
+                            <Button Style="{StaticResource LinkButton}" Content="Ver página da família no site ↗" Margin="0,14,0,0"
+                                    HorizontalAlignment="Left" Command="{Binding OpenPageCommand}"/>
                         </StackPanel>
                     </ScrollViewer>
 
+                    <Button Grid.Column="1" Style="{StaticResource CloseRoundButton}"
+                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,14,14,0"
+                            Command="{Binding DataContext.CloseDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+
                     <!-- Actions -->
-                    <Border Grid.Row="1" Background="{StaticResource BgToolbar}" BorderBrush="{StaticResource BorderSubtle}"
-                            BorderThickness="0,1,0,0" Padding="20,14,20,16">
+                    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource BgToolbar}" BorderBrush="{StaticResource BorderSubtle}"
+                            BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="20,14,20,16">
                         <StackPanel>
                             <Border Style="{StaticResource WarningBanner}" Margin="0,0,0,10"
                                     Visibility="{Binding BlockedReason, Converter={StaticResource HasValueToVis}}">
@@ -523,32 +618,36 @@
                             <ProgressBar Style="{StaticResource ThinProgress}" Maximum="100" Value="{Binding Progress, Mode=OneWay}" Margin="0,0,0,10"
                                          Visibility="{Binding IsInserting, Converter={StaticResource BoolToVis}}"/>
 
-                            <Button Style="{StaticResource PrimaryButton}" Height="44" Command="{Binding InsertCommand}"
-                                    Visibility="{Binding ShowInsert, Converter={StaticResource BoolToVis}}">
-                                <Grid>
-                                    <TextBlock Text="↓  Inserir no projeto"
-                                               Visibility="{Binding IsInserting, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
-                                    <TextBlock Text="Baixando…" Visibility="{Binding IsInserting, Converter={StaticResource BoolToVis}}"/>
-                                </Grid>
-                            </Button>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <!-- Subscribe as an alternative next to the purchase button -->
+                                <Button Style="{StaticResource SecondaryButton}" Height="42" Margin="0,0,10,0"
+                                        Content="Ou assine um plano  ↗"
+                                        Command="{Binding PlansCommand}"
+                                        Visibility="{Binding ShowPlansSecondary, Converter={StaticResource BoolToVis}}"/>
 
-                            <!-- Buy this family on the site -->
-                            <Button Style="{StaticResource BuyButton}" Height="46" Command="{Binding PurchaseCommand}"
-                                    Visibility="{Binding HasPurchaseUrl, Converter={StaticResource BoolToVis}}">
-                                <TextBlock>
-                                    <Run Text="{Binding PurchaseText, Mode=OneWay}"/>
-                                    <Run Text="  ↗" FontWeight="Normal"/>
-                                </TextBlock>
-                            </Button>
+                                <!-- Buy this family on the site -->
+                                <Button Style="{StaticResource BuyButton}" Height="42" MinWidth="220" Command="{Binding PurchaseCommand}"
+                                        Visibility="{Binding HasPurchaseUrl, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock>
+                                        <Run Text="{Binding PurchaseText, Mode=OneWay}"/>
+                                        <Run Text="  ↗" FontWeight="Normal"/>
+                                    </TextBlock>
+                                </Button>
 
-                            <!-- Subscribe: main action when the family cannot be bought separately -->
-                            <Button Style="{StaticResource PrimaryButton}" Height="44" Content="Assinar um plano  ↗"
-                                    Command="{Binding PlansCommand}"
-                                    Visibility="{Binding ShowPlansPrimary, Converter={StaticResource BoolToVis}}"/>
-                            <Button Style="{StaticResource SecondaryButton}" Height="40" Margin="0,8,0,0"
-                                    Content="Ou assine um plano e baixe sem pagar por família  ↗"
-                                    Command="{Binding PlansCommand}"
-                                    Visibility="{Binding ShowPlansSecondary, Converter={StaticResource BoolToVis}}"/>
+                                <!-- Subscribe: main action when the family cannot be bought separately -->
+                                <Button Style="{StaticResource SubscribeButton}" Height="42" MinWidth="220" Content="Assinar um plano  ↗"
+                                        Command="{Binding PlansCommand}"
+                                        Visibility="{Binding ShowPlansPrimary, Converter={StaticResource BoolToVis}}"/>
+
+                                <Button Style="{StaticResource PrimaryButton}" Height="42" MinWidth="220" Command="{Binding InsertCommand}"
+                                        Visibility="{Binding ShowInsert, Converter={StaticResource BoolToVis}}">
+                                    <Grid>
+                                        <TextBlock Text="↓  Inserir no projeto"
+                                                   Visibility="{Binding IsInserting, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+                                        <TextBlock Text="Baixando…" Visibility="{Binding IsInserting, Converter={StaticResource BoolToVis}}"/>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </Grid>

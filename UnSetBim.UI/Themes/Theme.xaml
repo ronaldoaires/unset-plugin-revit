@@ -17,6 +17,7 @@
     <conv:HasValueToVisibilityConverter x:Key="HasValueToVis"/>
     <conv:InverseBoolConverter x:Key="InverseBool"/>
     <conv:InitialConverter x:Key="Initial"/>
+    <conv:WidthToColumnsConverter x:Key="WidthToColumns"/>
 
     <!-- Typography -->
     <FontFamily x:Key="UiFont">Segoe UI</FontFamily>
@@ -506,7 +507,7 @@
     <!-- Thin progress bar -->
     <Style x:Key="ThinProgress" TargetType="ProgressBar">
         <Setter Property="Height" Value="4"/>
-        <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentLight}"/>
         <Setter Property="Background" Value="{StaticResource BgElevated}"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>

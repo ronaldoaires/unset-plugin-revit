@@ -12,7 +12,8 @@ using UnSetBim.UI.Mvvm;
 namespace UnSetBim.Modules.Families.ViewModels;
 
 /// <summary>
-/// Right-hand panel: GET /families/{slug} and the download decision.
+/// Detail modal: GET /families/{slug} and the download decision. Also used without the modal
+/// by the card button (load → insert, or open the purchase page).
 /// "Inserir no projeto" is enabled only when download.allowed is true (server decision);
 /// otherwise the panel explains why and offers the purchase page or the plans.
 /// </summary>
@@ -32,6 +33,7 @@ public sealed class FamilyDetailViewModel : ObservableObject, IDisposable
     private string _loadError = string.Empty;
     private string _errorMessage = string.Empty;
     private string _statusMessage = string.Empty;
+    private PlacementOutcome? _lastOutcome;
 
     internal FamilyDetailViewModel(UnSetHost host, FamilyCardViewModel card, Func<FamilyCardViewModel, Task> toggleFavorite)
     {
@@ -223,8 +225,16 @@ public sealed class FamilyDetailViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    private async Task InsertAsync()
+    /// <summary>Outcome of the last insert; null when it failed with an error (see <see cref="ErrorMessage"/>).</summary>
+    internal PlacementOutcome? LastOutcome => _lastOutcome;
+
+    /// <summary>Site purchase page, when the family can be bought.</summary>
+    internal string? PurchaseUrl => HasPurchaseUrl ? _detail?.Download.PurchaseUrl : null;
+
+    internal async Task InsertAsync()
     {
+        _lastOutcome = null;
+
         if (_detail is null || !CanInsert)
             return;
 
@@ -237,6 +247,7 @@ public sealed class FamilyDetailViewModel : ObservableObject, IDisposable
         {
             var progress = new Progress<double>(p => Progress = p * 100);
             var result = await _inserter.InsertAsync(_detail, progress, _cts.Token);
+            _lastOutcome = result.Outcome;
 
             switch (result.Outcome)
             {
