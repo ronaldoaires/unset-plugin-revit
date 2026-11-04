@@ -21,6 +21,9 @@ public sealed class PluginState
     /// <summary>Last sort chosen in the families catalog.</summary>
     public string? FamiliesSort { get; set; }
 
+    /// <summary>Last options of each module tool, e.g. "humanized_plan.style" = "realistic".</summary>
+    public Dictionary<string, string> ToolPreferences { get; set; } = new();
+
     public static PluginState Load()
     {
         lock (Sync)

@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\UnSetBim.Framework\UnSetBim.Framework.csproj" />
     <ProjectReference Include="..\UnSetBim.Modules.Families\UnSetBim.Modules.Families.csproj" />
+    <ProjectReference Include="..\UnSetBim.Modules.Architectural\UnSetBim.Modules.Architectural.csproj" />
   </ItemGroup>
 
   <!--

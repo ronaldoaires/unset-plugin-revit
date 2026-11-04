@@ -22,7 +22,7 @@
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
 
     <!-- Single source of truth for the plugin version. The release pipeline overrides it with -p:Version=x.y.z -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Company>UnSet BIM</Company>
     <Product>UnSet BIM</Product>
     <Copyright>Copyright © UnSet BIM</Copyright>

@@ -1,0 +1,88 @@
+<Window x:Class="UnSetBim.Modules.Architectural.HumanizedPlan.HumanizedPlanResultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UnSet BIM — Planta Humanizada IA"
+        Width="980" Height="680" MinWidth="760" MinHeight="520"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UnSetBim.UI;component/Themes/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="PromptBox" TargetType="TextBox" BasedOn="{StaticResource InputTextBox}">
+                <Setter Property="IsReadOnly" Value="True"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="AcceptsReturn" Value="True"/>
+                <Setter Property="VerticalContentAlignment" Value="Top"/>
+                <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="24,20,24,20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="6*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.ColumnSpan="3" Margin="0,0,0,14">
+            <TextBlock Text="Imagem e prompt prontos" Style="{StaticResource TitleText}"/>
+            <TextBlock x:Name="PathText" Style="{StaticResource BodyText}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+        </StackPanel>
+
+        <!-- Image preview (white background, like the exported PNG) -->
+        <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="8">
+            <Image x:Name="Preview" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="2" Style="{StaticResource MinimalScrollViewer}" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Grid>
+                    <TextBlock Text="PROMPT COMPLETO · Gemini (recomendado), ChatGPT, Copilot" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <Button x:Name="CopyFullButton" Content="Copiar" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="OnCopyFull"/>
+                </Grid>
+                <TextBox x:Name="FullBox" Style="{StaticResource PromptBox}" Height="210" Margin="0,6,0,0"/>
+
+                <Grid Margin="0,16,0,0">
+                    <TextBlock Text="PROMPT CURTO · Leonardo, Midjourney, Firefly" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <Button x:Name="CopyShortButton" Content="Copiar" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="OnCopyShort"/>
+                </Grid>
+                <TextBox x:Name="ShortBox" Style="{StaticResource PromptBox}" Height="96" Margin="0,6,0,0"/>
+
+                <Grid Margin="0,16,0,0">
+                    <TextBlock Text="PROMPT NEGATIVO · campo &quot;Negative prompt&quot;" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <Button x:Name="CopyNegativeButton" Content="Copiar" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="OnCopyNegative"/>
+                </Grid>
+                <TextBox x:Name="NegativeBox" Style="{StaticResource PromptBox}" Height="64" Margin="0,6,0,0"/>
+
+                <Border Style="{StaticResource InfoBanner}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" Text="Como usar"/>
+                        <TextBlock Style="{StaticResource BodyText}" Margin="0,4,0,0"
+                                   Text="Gemini (melhor resultado nos testes), ChatGPT ou Copilot: clique em Copiar imagem e cole na conversa (Ctrl+V), depois cole o prompt completo e envie. Use uma conversa nova para cada planta."/>
+                        <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0"
+                                   Text="Leonardo, Midjourney ou Firefly: envie a imagem como referência de estrutura (no Leonardo, Image Guidance com Line Art ou Edge to Image, força alta), cole o prompt curto e, se houver o campo, o negativo."/>
+                        <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0"
+                                   Text="Se a IA errar algo, responda na mesma conversa apontando só o erro, ex.: “as portas devem ser retas”, “no fundo do lote não existe parede”, “mantenha a mesa de jantar”."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Abrir pasta" Style="{StaticResource SecondaryButton}" Click="OnOpenFolder"/>
+            <Button x:Name="CopyImageButton" Content="Copiar imagem" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnCopyImage"/>
+            <Button Content="Fechar" Style="{StaticResource PrimaryButton}" IsCancel="True" Margin="10,0,0,0" Click="OnClose"/>
+        </StackPanel>
+    </Grid>
+</Window>

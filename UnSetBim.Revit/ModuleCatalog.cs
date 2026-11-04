@@ -1,4 +1,5 @@
 using UnSetBim.Framework.Modules;
+using UnSetBim.Modules.Architectural;
 using UnSetBim.Modules.Families;
 
 namespace UnSetBim.Revit;
@@ -13,7 +14,7 @@ internal static class ModuleCatalog
     public static IEnumerable<IUnSetModule> Create() => new IUnSetModule[]
     {
         new FamiliesModule(),
-        // new ArchitecturalModule(),   // RequiredPlanModule = PlanModules.Architectural
+        new ArchitecturalModule(),
         // new StructuralModule(),      // RequiredPlanModule = PlanModules.Structural
     };
 }

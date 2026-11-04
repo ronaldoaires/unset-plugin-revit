@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Architectural module: modeling, documentation and presentation tools. Gated by the "architectural" plan module. -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <UseRevitApi>true</UseRevitApi>
+    <RootNamespace>UnSetBim.Modules.Architectural</RootNamespace>
+    <AssemblyName>UnSetBim.Modules.Architectural</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Framework\UnSetBim.Framework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\*.png" />
+  </ItemGroup>
+</Project>

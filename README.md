@@ -16,6 +16,7 @@ Revit add-in of [UnSet BIM](https://unset.com.br). First module: the families li
 | `UnSetBim.UI` | WPF theme (`Themes/Theme.xaml`), MVVM helpers, converters, `RemoteImage` (async cached images). No Revit. | Core |
 | `UnSetBim.Framework` | Revit-aware layer shared by every module: `UnSetHost` (services), `IUnSetModule`, `UnSetCommand` (base command with update/sign-in/plan checks), `RevitDispatcher` (ExternalEvent queue), session, sign-in and account windows, update flow. | Core, UI |
 | `UnSetBim.Modules.Families` | Families module: catalog window, detail panel, favorites, download history, download + load + placement. | Framework |
+| `UnSetBim.Modules.Architectural` | Architectural module (plan module `architectural`): panel "Arquitetura", one button per tool. Tools so far: Align (align, center, distribute), Humanized plan AI (clean PNG + prompts). | Framework |
 | `UnSetBim.Revit` | The add-in loaded by Revit (`App`), ribbon tab, `ModuleCatalog`. | Framework, modules |
 
 ```
