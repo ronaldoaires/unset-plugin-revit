@@ -1,9 +1,11 @@
+using System.Windows.Threading;
 using Autodesk.Revit.UI;
 using UnSetBim.Core;
 using UnSetBim.Core.Api;
 using UnSetBim.Core.Configuration;
 using UnSetBim.Core.Diagnostics;
 using UnSetBim.Core.Storage;
+using UnSetBim.Framework.Dialogs;
 using UnSetBim.Framework.Modules;
 using UnSetBim.Framework.Threading;
 using UnSetBim.Framework.Session;
@@ -78,7 +80,39 @@ public sealed class UnSetHost : IDisposable
         Log.Info($"Starting {PluginInfo.Name} {PluginInfo.InformationalVersion} on Revit {year} ({application.ControlledApplication.VersionBuild}).");
 
         _current = new UnSetHost(year, application.MainWindowHandle);
+
+        // Plugin windows share Revit's UI thread: an exception escaping a binding or an async
+        // event handler would otherwise end the whole Revit session.
+        _uiDispatcher = Dispatcher.CurrentDispatcher;
+        _uiDispatcher.UnhandledException += OnUiUnhandledException;
+
         return _current;
+    }
+
+    private static Dispatcher? _uiDispatcher;
+    private static DateTime _lastUiErrorShownAt = DateTime.MinValue;
+
+    /// <summary>
+    /// Swallows UI-thread exceptions that come from UnSet BIM code (and only those: Revit's own
+    /// errors are left to Revit), logs them and tells the user once in a while.
+    /// </summary>
+    private static void OnUiUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        var text = e.Exception.ToString();
+        if (!text.Contains("UnSetBim.", StringComparison.Ordinal))
+            return;
+
+        e.Handled = true;
+        Log.Error("Unhandled UI exception in UnSet BIM (Revit kept running).", e.Exception);
+
+        // A broken binding can fail on every layout pass: never flood the user with dialogs.
+        if (DateTime.UtcNow - _lastUiErrorShownAt < TimeSpan.FromSeconds(30))
+            return;
+
+        _lastUiErrorShownAt = DateTime.UtcNow;
+        _uiDispatcher?.InvokeAsync(() => MessageDialog.Show("UnSet BIM",
+            "Ocorreu um erro na janela do UnSet BIM. O Revit continua funcionando.\n\nDetalhes foram gravados no log do UnSet BIM.",
+            DialogKind.Warning));
     }
 
     /// <summary>Start every module. A failing module is logged and skipped; the others keep working.</summary>
@@ -151,6 +185,9 @@ public sealed class UnSetHost : IDisposable
                 Log.Error($"Module {module.Id} failed to stop.", ex);
             }
         }
+
+        if (_uiDispatcher is not null)
+            _uiDispatcher.UnhandledException -= OnUiUnhandledException;
 
         Revit.Dispose();
         Api.Dispose();

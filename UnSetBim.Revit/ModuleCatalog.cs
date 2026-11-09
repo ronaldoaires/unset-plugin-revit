@@ -1,6 +1,7 @@
 using UnSetBim.Framework.Modules;
 using UnSetBim.Modules.Architectural;
 using UnSetBim.Modules.Families;
+using UnSetBim.Modules.Materials;
 
 namespace UnSetBim.Revit;
 
@@ -15,6 +16,7 @@ internal static class ModuleCatalog
     {
         new FamiliesModule(),
         new ArchitecturalModule(),
+        new MaterialsModule(),
         // new StructuralModule(),      // RequiredPlanModule = PlanModules.Structural
     };
 }

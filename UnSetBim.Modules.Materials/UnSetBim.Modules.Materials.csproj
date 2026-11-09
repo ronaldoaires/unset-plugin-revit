@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Materials module: browse the UnSet BIM textures and turn them into native Revit materials
+    (create + paint faces). Open to every signed-in user; the server decides each texture.
+  -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <UseRevitApi>true</UseRevitApi>
+    <RootNamespace>UnSetBim.Modules.Materials</RootNamespace>
+    <AssemblyName>UnSetBim.Modules.Materials</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UnSetBim.Framework\UnSetBim.Framework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\*.png" />
+  </ItemGroup>
+</Project>

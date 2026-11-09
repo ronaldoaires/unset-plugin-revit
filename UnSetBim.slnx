@@ -12,5 +12,6 @@
   <Project Path="UnSetBim.Framework/UnSetBim.Framework.csproj" />
   <Project Path="UnSetBim.Modules.Families/UnSetBim.Modules.Families.csproj" />
   <Project Path="UnSetBim.Modules.Architectural/UnSetBim.Modules.Architectural.csproj" />
+  <Project Path="UnSetBim.Modules.Materials/UnSetBim.Modules.Materials.csproj" />
   <Project Path="UnSetBim.Revit/UnSetBim.Revit.csproj" />
 </Solution>

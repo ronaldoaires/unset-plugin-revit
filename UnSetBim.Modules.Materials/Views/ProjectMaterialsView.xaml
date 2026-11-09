@@ -1,0 +1,335 @@
+<UserControl x:Class="UnSetBim.Modules.Materials.Views.ProjectMaterialsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UnSetBim.Modules.Materials.ViewModels"
+             xmlns:revit="clr-namespace:UnSetBim.Modules.Materials.RevitApi"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:MaterialEditorViewModel}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Merged here too: StaticResource lookups happen before the control joins the window. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UnSetBim.UI;component/Themes/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="MaterialItem" TargetType="ListBoxItem">
+                <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="12,9" Margin="0,1">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource BgHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource Accent}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="FieldLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
+            </Style>
+
+            <Style x:Key="NumberBox" TargetType="TextBox" BasedOn="{StaticResource InputTextBox}">
+                <Setter Property="Width" Value="110"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+            </Style>
+
+            <Style x:Key="Section" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource BgCard}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderSubtle}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="16,14"/>
+                <Setter Property="Margin" Value="0,0,0,12"/>
+            </Style>
+
+            <Style x:Key="SmallButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="MinHeight" Value="30"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Margin" Value="0,0,6,0"/>
+            </Style>
+
+            <Style x:Key="EditorSlider" TargetType="Slider">
+                <Setter Property="Width" Value="220"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            </Style>
+
+            <Style x:Key="EditorCheck" TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                <Setter Property="FontSize" Value="12.5"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
+
+            <Style x:Key="StatusLine" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12.5"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                        <Setter Property="Foreground" Value="{StaticResource Warning}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ── Materials of the project ── -->
+        <Border Background="{StaticResource BgToolbar}" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="12,18,12,12">
+                <Grid DockPanel.Dock="Top" Margin="12,0,0,10">
+                    <TextBlock Text="MATERIAIS DO PROJETO" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource LinkButton}" Content="↻" FontSize="14" HorizontalAlignment="Right"
+                            ToolTip="Atualizar a lista (troque de projeto e clique aqui)" Command="{Binding RefreshCommand}"/>
+                </Grid>
+
+                <TextBlock DockPanel.Dock="Top" Text="{Binding ListMessage}" Style="{StaticResource BodyText}" FontSize="12"
+                           Margin="12,0" TextWrapping="Wrap"
+                           Visibility="{Binding ListMessage, Converter={StaticResource HasValueToVis}}"/>
+
+                <ListBox ItemsSource="{Binding Materials}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                         ItemContainerStyle="{StaticResource MaterialItem}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="ListBox">
+                            <ScrollViewer Style="{StaticResource MinimalScrollViewer}" VerticalScrollBarVisibility="Auto">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ListBox.Template>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type revit:ProjectMaterialInfo}">
+                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Editor ── -->
+        <Grid Grid.Column="1" Margin="24,20,20,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="{Binding Selected.Name, FallbackValue='Selecione um material'}" Style="{StaticResource TitleText}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Status}" Style="{StaticResource StatusLine}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1" Margin="0,16,0,0" Style="{StaticResource MinimalScrollViewer}"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Preview: 2 m × 2 m, tiled like the model -->
+                    <StackPanel>
+                        <Border Width="{Binding PreviewSquare}" Height="{Binding PreviewSquare}" CornerRadius="10" ClipToBounds="True"
+                                BorderBrush="{StaticResource BorderMid}" BorderThickness="1" Background="#1F1F24">
+                            <Grid>
+                                <Rectangle>
+                                    <Rectangle.Fill>
+                                        <ImageBrush ImageSource="{Binding DiffuseImage}" TileMode="Tile" Stretch="Fill"
+                                                    ViewportUnits="Absolute" Viewport="{Binding PreviewViewport}"
+                                                    Transform="{Binding PreviewTransform}"/>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                                <Rectangle Fill="{Binding TintBrush}" Opacity="0.35"
+                                           Visibility="{Binding TintEnabled, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="Prévia de 2 × 2 m" FontSize="11.5" Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Veja o resultado no Revit com o estilo visual Realista."
+                                   FontSize="11.5" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap"
+                                   Width="{Binding PreviewSquare}" TextAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" MaxWidth="560" HorizontalAlignment="Left">
+
+                        <!-- Size -->
+                        <Border Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="ESCALA (TAMANHO DE UMA REPETIÇÃO)" Style="{StaticResource SectionLabel}" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel>
+                                        <TextBlock Text="Largura (mm)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Style="{StaticResource NumberBox}" Text="{Binding WidthMm, StringFormat='0.#'}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="12,0,0,0">
+                                        <TextBlock Text="Altura (mm)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Style="{StaticResource NumberBox}" Text="{Binding HeightMm, StringFormat='0.#'}"/>
+                                    </StackPanel>
+                                    <CheckBox Style="{StaticResource EditorCheck}" Content="Manter proporção" Margin="14,20,0,0"
+                                              IsChecked="{Binding KeepRatio}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Style="{StaticResource SmallButton}" Content="Tamanho original" Command="{Binding ResetSizeCommand}"
+                                            ToolTip="Volta ao tamanho cadastrado no site, sem rotação nem deslocamento."/>
+                                    <TextBlock Text="{Binding OriginalSizeText}" FontSize="11.5" Foreground="{StaticResource TextMuted}"
+                                               VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Rotation and position -->
+                        <Border Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="ROTAÇÃO E POSIÇÃO" Style="{StaticResource SectionLabel}" Margin="0,0,0,10"/>
+                                <TextBlock Text="Rotação (graus)" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Slider Style="{StaticResource EditorSlider}" Minimum="-180" Maximum="180"
+                                            TickFrequency="15" IsSnapToTickEnabled="True" Value="{Binding RotationDeg}"/>
+                                    <TextBox Style="{StaticResource NumberBox}" Width="80" Margin="12,0,0,0"
+                                             Text="{Binding RotationDeg, StringFormat='0.#'}"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Deslocamento X (mm)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Style="{StaticResource NumberBox}" Text="{Binding OffsetXMm, StringFormat='0.#'}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="12,0,0,0">
+                                        <TextBlock Text="Deslocamento Y (mm)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Style="{StaticResource NumberBox}" Text="{Binding OffsetYMm, StringFormat='0.#'}"/>
+                                    </StackPanel>
+                                    <!-- Arrows move a tenth of the tile -->
+                                    <Grid Margin="16,14,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                            <ColumnDefinition Width="32"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Style="{StaticResource SmallButton}" Content="←" Padding="0" Margin="0,0,2,0"
+                                                ToolTip="Mover para a esquerda" Command="{Binding NudgeCommand}" CommandParameter="left"/>
+                                        <StackPanel Grid.Column="1">
+                                            <Button Style="{StaticResource SmallButton}" Content="↑" Padding="0" Height="22" MinHeight="22" Margin="0,0,0,2"
+                                                    ToolTip="Mover para cima" Command="{Binding NudgeCommand}" CommandParameter="up"/>
+                                            <Button Style="{StaticResource SmallButton}" Content="↓" Padding="0" Height="22" MinHeight="22" Margin="0"
+                                                    ToolTip="Mover para baixo" Command="{Binding NudgeCommand}" CommandParameter="down"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Style="{StaticResource SmallButton}" Content="→" Padding="0" Margin="2,0,0,0"
+                                                ToolTip="Mover para a direita" Command="{Binding NudgeCommand}" CommandParameter="right"/>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Look -->
+                        <Border Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="APARÊNCIA" Style="{StaticResource SectionLabel}" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Brilho da imagem" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Slider Style="{StaticResource EditorSlider}" Minimum="0.2" Maximum="2" Value="{Binding ImageBrightness}"/>
+                                    <TextBlock Text="{Binding ImageBrightness, StringFormat='0.00'}" Foreground="{StaticResource TextSecondary}"
+                                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding HasRelief, Converter={StaticResource BoolToVis}}" Margin="0,12,0,0">
+                                    <TextBlock Text="Relevo" Style="{StaticResource FieldLabel}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Slider Style="{StaticResource EditorSlider}" Minimum="0" Maximum="3" Value="{Binding ReliefAmount}"/>
+                                        <TextBlock Text="{Binding ReliefAmount, StringFormat='0.00'}" Foreground="{StaticResource TextSecondary}"
+                                                   VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Text="Acabamento" Style="{StaticResource FieldLabel}" Margin="0,14,0,5"/>
+                                <WrapPanel>
+                                    <Button Style="{StaticResource SmallButton}" Content="Mapa da textura" Command="{Binding PresetCommand}" CommandParameter="map"
+                                            ToolTip="Usa o mapa de rugosidade da textura (partes foscas e brilhantes)."
+                                            Visibility="{Binding RoughnessAvailable, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Style="{StaticResource SmallButton}" Content="Fosco" Command="{Binding PresetCommand}" CommandParameter="matte"/>
+                                    <Button Style="{StaticResource SmallButton}" Content="Acetinado" Command="{Binding PresetCommand}" CommandParameter="satin"/>
+                                    <Button Style="{StaticResource SmallButton}" Content="Brilhante" Command="{Binding PresetCommand}" CommandParameter="gloss"/>
+                                    <Button Style="{StaticResource SmallButton}" Content="Polido" Command="{Binding PresetCommand}" CommandParameter="polished"/>
+                                </WrapPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0" IsEnabled="{Binding CanEditGlossiness}">
+                                    <Slider Style="{StaticResource EditorSlider}" Minimum="0" Maximum="1" Value="{Binding Glossiness}"/>
+                                    <TextBlock Text="{Binding Glossiness, StringFormat='0.00'}" Foreground="{StaticResource TextSecondary}"
+                                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="Usando o mapa de rugosidade da textura." FontSize="11.5" Foreground="{StaticResource TextMuted}"
+                                           Margin="0,4,0,0"
+                                           Visibility="{Binding UseRoughnessMap, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Tint -->
+                        <Border Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="TINGIR" Style="{StaticResource SectionLabel}" Margin="0,0,0,10"/>
+                                <CheckBox Style="{StaticResource EditorCheck}" Content="Tingir a textura com uma cor"
+                                          IsChecked="{Binding TintEnabled}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Border Width="30" Height="30" CornerRadius="6" Background="{Binding TintBrush}"
+                                            BorderBrush="{StaticResource BorderMid}" BorderThickness="1"/>
+                                    <TextBox Style="{StaticResource NumberBox}" Width="100" Margin="10,0,0,0"
+                                             Text="{Binding TintColor}" ToolTip="Cor em hexadecimal, ex.: #d9b38c"/>
+                                    <ItemsControl ItemsSource="{Binding TintSwatches}" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Width="22" Height="22" Margin="0,0,5,0" Cursor="Hand" ToolTip="{Binding}"
+                                                        Command="{Binding DataContext.TintSwatchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border CornerRadius="11" Background="{Binding}" BorderBrush="{StaticResource BorderMid}" BorderThickness="1"/>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="As mudanças vão para o modelo sozinhas, logo depois que você para de mexer. Cada ajuste pode ser desfeito com Ctrl+Z no Revit."
+                                   FontSize="11.5" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="2,0,0,8"/>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

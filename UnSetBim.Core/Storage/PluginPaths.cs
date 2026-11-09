@@ -14,6 +14,12 @@ public static class PluginPaths
     /// <summary>Downloaded .rfa files, one sub-folder per family slug.</summary>
     public static string FamiliesFolder => Path.Combine(Root, "Families");
 
+    /// <summary>
+    /// Texture packages: Textures\{slug}\v{version}\{resolution}\. Kept on disk on purpose:
+    /// Revit materials point at these image files.
+    /// </summary>
+    public static string TexturesFolder => Path.Combine(Root, "Textures");
+
     /// <summary>Thumbnails and images shown in the catalog.</summary>
     public static string ImageCacheFolder => Path.Combine(Root, "Cache", "Images");
 
@@ -32,6 +38,7 @@ public static class PluginPaths
     {
         Directory.CreateDirectory(Root);
         Directory.CreateDirectory(FamiliesFolder);
+        Directory.CreateDirectory(TexturesFolder);
         Directory.CreateDirectory(ImageCacheFolder);
         Directory.CreateDirectory(LogsFolder);
     }

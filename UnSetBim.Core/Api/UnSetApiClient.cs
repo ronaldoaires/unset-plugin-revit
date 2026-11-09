@@ -167,6 +167,53 @@ public sealed class UnSetApiClient : IDisposable
         GetJsonAsync<PagedResponse<FamilySummary>>($"me/downloads?page={Math.Max(page, 1)}&per_page={Math.Clamp(perPage, 1, 50)}", authenticated: true, ct);
 
     // ─────────────────────────────────────────────
+    // Textures (docs/api.md section 13)
+    // ─────────────────────────────────────────────
+
+    public async Task<List<TextureCategory>> GetTextureCategoriesAsync(CancellationToken ct = default) =>
+        (await GetJsonAsync<DataEnvelope<List<TextureCategory>>>("texture-categories", authenticated: true, ct)).Data ?? new();
+
+    public Task<PagedResponse<TextureSummary>> GetTexturesAsync(TextureQuery query, CancellationToken ct = default) =>
+        GetJsonAsync<PagedResponse<TextureSummary>>("textures" + query.ToQueryString(), authenticated: true, ct);
+
+    public async Task<TextureDetail> GetTextureAsync(string slug, CancellationToken ct = default)
+    {
+        var envelope = await GetJsonAsync<DataEnvelope<TextureDetail>>($"textures/{Uri.EscapeDataString(slug)}", authenticated: true, ct);
+        return envelope.Data ?? throw new ApiException(HttpStatusCode.NotFound, null, null);
+    }
+
+    /// <summary>
+    /// GET download.url (?resolution=) and save the ZIP to <paramref name="destinationFile"/>.
+    /// Returns the version and resolution the server actually served (X-Texture-* headers).
+    /// Throws <see cref="ApiException"/> with 403 subscription_required, 404, 422, 429.
+    /// </summary>
+    public async Task<(int? Version, string? Resolution)> DownloadTexturePackageAsync(
+        string downloadUrl, string? resolution, string destinationFile, IProgress<double>? progress, CancellationToken ct)
+    {
+        var uri = new Uri(downloadUrl, UriKind.Absolute);
+
+        // The token is only ever sent to the API host.
+        if (!string.Equals(uri.Host, _baseUrl.Host, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Unexpected download host: {uri.Host}");
+
+        var url = string.IsNullOrWhiteSpace(resolution)
+            ? uri.ToString()
+            : uri + (uri.Query.Length > 0 ? "&" : "?") + "resolution=" + Uri.EscapeDataString(resolution);
+
+        using var request = CreateRequest(HttpMethod.Get, url, authenticated: true);
+        using var response = await SendAndEnsureAsync(request, ct, timeout: null);
+
+        int? servedVersion = int.TryParse(FirstHeader(response, "X-Texture-Version"), out var v) ? v : null;
+        var servedResolution = FirstHeader(response, "X-Texture-Resolution");
+
+        await SaveToFileAsync(response, destinationFile, progress, ct);
+        return (servedVersion, servedResolution);
+    }
+
+    private static string? FirstHeader(HttpResponseMessage response, string name) =>
+        response.Headers.TryGetValues(name, out var values) ? values.FirstOrDefault() : null;
+
+    // ─────────────────────────────────────────────
     // Downloads
     // ─────────────────────────────────────────────
 
