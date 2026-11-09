@@ -73,6 +73,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             new FilterOption<string?>("Emissivo", TextureMaterialType.Emissive),
         };
         _selectedType = TypeOptions[0];
+        _selectedType.IsSelected = true;
 
         AccessOptions = new[]
         {
@@ -81,6 +82,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             new FilterOption<bool?>("Assinantes", false),
         };
         _selectedAccess = AccessOptions[0];
+        _selectedAccess.IsSelected = true;
 
         SortOptions = new[]
         {
@@ -89,6 +91,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             new FilterOption<string>("Nome (A–Z)", TextureSort.Name),
         };
         _selectedSort = SortOptions[0];
+        _selectedSort.IsSelected = true;
 
         NextPageCommand = new AsyncRelayCommand(() => LoadPageAsync(CurrentPage + 1), () => !IsLoading && CurrentPage < LastPage);
         PreviousPageCommand = new AsyncRelayCommand(() => LoadPageAsync(CurrentPage - 1), () => !IsLoading && CurrentPage > 1);
@@ -99,17 +102,18 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
         SubscribeCommand = new RelayCommand(() => Browser.Open(host.Links.Plans));
         ClearFiltersCommand = new AsyncRelayCommand(ClearFiltersAsync);
         CloseSelectionCommand = new RelayCommand(() => Selected = null);
+
+        // Filter menus (icon buttons): the menu item passes the chosen option.
+        SelectCategoryCommand = new RelayCommand<TextureNavItem>(item => SelectedNav = item);
+        SelectTypeCommand = new RelayCommand<FilterOption<string?>>(option => SelectedType = option);
+        SelectAccessCommand = new RelayCommand<FilterOption<bool?>>(option => SelectedAccess = option);
+        SelectSortCommand = new RelayCommand<FilterOption<string>>(option => SelectedSort = option);
         AdjustCommand = new AsyncRelayCommand(OpenEditorAsync, () => _lastMaterialId is not null && !IsBusy);
 
         Project = new MaterialEditorViewModel(host);
 
         _host.Session.Changed += OnSessionChanged;
     }
-
-    /// <summary>Face picking started: the window minimizes so the user can click in the model.</summary>
-    public event EventHandler? PickStarted;
-
-    public event EventHandler? PickEnded;
 
     public event EventHandler? SessionEnded;
 
@@ -135,6 +139,40 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
     public ICommand SubscribeCommand { get; }
     public ICommand ClearFiltersCommand { get; }
     public ICommand CloseSelectionCommand { get; }
+    public ICommand SelectCategoryCommand { get; }
+    public ICommand SelectTypeCommand { get; }
+    public ICommand SelectAccessCommand { get; }
+    public ICommand SelectSortCommand { get; }
+
+    // Tooltips and "active" highlight of the filter icons.
+    public string CategoryTip => $"Categoria: {SelectedNav?.Label ?? "Todas"}";
+    public string TypeTip => $"Tipo de material: {SelectedType.Label}";
+    public string AccessTip => $"Acesso: {SelectedAccess.Label}";
+    public string SortTip => $"Ordenar: {SelectedSort.Label}";
+    public bool IsCategoryFiltered => SelectedNav?.CategorySlug is not null;
+    public bool IsTypeFiltered => SelectedType.Value is not null;
+    public bool IsAccessFiltered => SelectedAccess.Value is not null;
+
+    private void NotifyFilters()
+    {
+        foreach (var item in NavItems)
+            item.IsSelected = ReferenceEquals(item, _selectedNav);
+        foreach (var option in TypeOptions)
+            option.IsSelected = ReferenceEquals(option, _selectedType);
+        foreach (var option in AccessOptions)
+            option.IsSelected = ReferenceEquals(option, _selectedAccess);
+        foreach (var option in SortOptions)
+            option.IsSelected = ReferenceEquals(option, _selectedSort);
+
+        OnPropertyChanged(nameof(CategoryTip));
+        OnPropertyChanged(nameof(TypeTip));
+        OnPropertyChanged(nameof(AccessTip));
+        OnPropertyChanged(nameof(SortTip));
+        OnPropertyChanged(nameof(IsCategoryFiltered));
+        OnPropertyChanged(nameof(IsTypeFiltered));
+        OnPropertyChanged(nameof(IsAccessFiltered));
+        OnPropertyChanged(nameof(HasActiveFilters));
+    }
     public ICommand AdjustCommand { get; }
 
     /// <summary>"No projeto" tab: materials of the active document and their editor.</summary>
@@ -414,7 +452,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             var categories = await _host.Api.GetTextureCategoriesAsync();
 
             NavItems.Clear();
-            NavItems.Add(new TextureNavItem { Label = "Todas as texturas" });
+            NavItems.Add(new TextureNavItem { Label = "Todas as categorias" });
             foreach (var category in categories)
                 NavItems.Add(new TextureNavItem { Label = category.Name, CategorySlug = category.Slug });
 
@@ -440,6 +478,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
 
         IsLoading = true;
         ErrorMessage = string.Empty;
+        NotifyFilters();
 
         try
         {
@@ -555,7 +594,6 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             {
                 StatusText = "Clique nas faces no Revit. Esc para terminar.";
                 picking = true;
-                PickStarted?.Invoke(this, EventArgs.Empty);
             }
             else
             {
@@ -592,7 +630,7 @@ public sealed class TexturesViewModel : ObservableObject, IDisposable
             IsBusy = false;
             Progress = 0;
             if (picking)
-                PickEnded?.Invoke(this, EventArgs.Empty);
+                Log.Info("Face painting finished.");
         }
     }
 

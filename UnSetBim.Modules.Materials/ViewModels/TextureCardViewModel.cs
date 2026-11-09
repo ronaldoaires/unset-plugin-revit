@@ -66,9 +66,11 @@ public sealed class TextureCardViewModel : ObservableObject
     }
 }
 
-/// <summary>Option of a filter ComboBox.</summary>
-public sealed class FilterOption<T>
+/// <summary>Option of a filter menu. <see cref="IsSelected"/> drives the check mark.</summary>
+public sealed class FilterOption<T> : ObservableObject
 {
+    private bool _isSelected;
+
     public FilterOption(string label, T value)
     {
         Label = label;
@@ -79,13 +81,30 @@ public sealed class FilterOption<T>
 
     public T Value { get; }
 
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+
     public override string ToString() => Label;
 }
 
-/// <summary>Sidebar entry: "Todas as texturas" or a category.</summary>
-public sealed class TextureNavItem
+/// <summary>Category entry: "Todas as categorias" or a category.</summary>
+public sealed class TextureNavItem : ObservableObject
 {
+    private bool _isSelected;
+
     public required string Label { get; init; }
 
     public string? CategorySlug { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+
+    // Shown by combo boxes and menus that display the item itself.
+    public override string ToString() => Label;
 }

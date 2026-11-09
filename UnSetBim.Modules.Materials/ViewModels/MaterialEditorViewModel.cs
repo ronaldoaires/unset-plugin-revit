@@ -21,7 +21,7 @@ public sealed class MaterialEditorViewModel : ObservableObject
 {
     /// <summary>Real-world width shown by the preview square.</summary>
     private const double PreviewSpanMm = 2000;
-    public const double PreviewSize = 240;
+    public const double PreviewSize = 220;
 
     private readonly UnSetHost _host;
     private readonly DispatcherTimer _applyTimer;
@@ -37,6 +37,7 @@ public sealed class MaterialEditorViewModel : ObservableObject
     private bool _statusIsError;
     private string _listMessage = string.Empty;
     private ImageSource? _diffuseImage;
+    private bool _isWorking;
 
     public MaterialEditorViewModel(UnSetHost host)
     {
@@ -53,6 +54,11 @@ public sealed class MaterialEditorViewModel : ObservableObject
         ResetSizeCommand = new RelayCommand(ResetSize, () => HasSettings);
         PresetCommand = new RelayCommand<string>(ApplyPreset);
         NudgeCommand = new RelayCommand<string>(Nudge);
+        PaintCommand = new AsyncRelayCommand(PaintAsync, () => Selected is not null && !IsWorking);
+        CreateVariantCommand = new AsyncRelayCommand(CreateVariantAsync, () => Selected is not null && !IsWorking);
+        PickFromFaceCommand = new AsyncRelayCommand(PickFromFaceAsync, () => !IsWorking);
+        RemovePaintCommand = new AsyncRelayCommand(RemovePaintAsync, () => !IsWorking);
+        DeleteMaterialCommand = new AsyncRelayCommand(DeleteMaterialAsync, () => Selected is not null && !IsWorking);
         TintSwatchCommand = new RelayCommand<string>(hex =>
         {
             TintEnabled = true;
@@ -67,6 +73,22 @@ public sealed class MaterialEditorViewModel : ObservableObject
     public ICommand PresetCommand { get; }
     public ICommand NudgeCommand { get; }
     public ICommand TintSwatchCommand { get; }
+    public ICommand PaintCommand { get; }
+    public ICommand CreateVariantCommand { get; }
+    public ICommand PickFromFaceCommand { get; }
+    public ICommand RemovePaintCommand { get; }
+    public ICommand DeleteMaterialCommand { get; }
+
+    /// <summary>Painting, picking or creating a variation is running in Revit.</summary>
+    public bool IsWorking
+    {
+        get => _isWorking;
+        private set
+        {
+            if (SetProperty(ref _isWorking, value))
+                CommandManager.InvalidateRequerySuggested();
+        }
+    }
 
     public IReadOnlyList<string> TintSwatches { get; } = new[]
     {
@@ -443,6 +465,240 @@ public sealed class MaterialEditorViewModel : ObservableObject
             _dirtyWhileApplying = false;
             await ApplyAsync();
         }
+    }
+
+    // ── Local actions (no server calls) ─────────────────
+
+    /// <summary>Paints faces with the selected project material (any variation).</summary>
+    private async Task PaintAsync()
+    {
+        if (Selected is not { } target)
+            return;
+
+        await FlushPendingAsync();
+        IsWorking = true;
+        Status = "Clique nas faces no Revit. Esc para terminar.";
+        StatusIsError = false;
+
+        try
+        {
+            var result = await _host.Revit.InvokeAsync(app =>
+            {
+                if (app.ActiveUIDocument is not { } uidoc)
+                    throw new InvalidOperationException("Abra o projeto deste material no Revit.");
+
+                return FacePainter.PaintFaces(uidoc, new Autodesk.Revit.DB.ElementId(target.Id), target.Name);
+            });
+
+            Status = result.Painted switch
+            {
+                0 when result.Skipped == 0 => "Nenhuma face pintada.",
+                0 => $"{result.Skipped} face(s) não aceitam pintura (famílias e importados).",
+                1 => "1 face pintada.",
+                var n => $"{n} faces pintadas.",
+            };
+            StatusIsError = result.Painted == 0 && result.Skipped > 0;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Painting with material {target.Id} failed.", ex);
+            Fail("Não foi possível pintar. Detalhes foram gravados no log do UnSet BIM.");
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }
+
+    /// <summary>
+    /// Copies the selected material with its own appearance (same images on disk, no download),
+    /// so the copy can get another angle, scale or finish. The copy is selected right away.
+    /// </summary>
+    private async Task CreateVariantAsync()
+    {
+        if (Selected is not { } source)
+            return;
+
+        await FlushPendingAsync();
+        IsWorking = true;
+
+        try
+        {
+            var variant = await _host.Revit.InvokeAsync(app =>
+            {
+                if (app.ActiveUIDocument?.Document is not { } doc)
+                    throw new InvalidOperationException("Abra o projeto deste material no Revit.");
+
+                return TextureMaterialTools.CreateVariant(doc, source.Id);
+            });
+
+            await RefreshAsync(variant.Id);
+            Status = $"Variação \"{variant.Name}\" criada. Ajuste ângulo, escala ou acabamento e use \"Pintar faces\".";
+            StatusIsError = false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Creating a variation of material {source.Id} failed.", ex);
+            Fail("Não foi possível criar a variação. Detalhes foram gravados no log do UnSet BIM.");
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }
+
+    /// <summary>The user clicks a face in the model and its material opens in the editor.</summary>
+    private async Task PickFromFaceAsync()
+    {
+        await FlushPendingAsync();
+        IsWorking = true;
+        Status = "Clique numa face no Revit. Esc cancela.";
+        StatusIsError = false;
+
+        try
+        {
+            var picked = await _host.Revit.InvokeAsync(app =>
+            {
+                if (app.ActiveUIDocument is not { } uidoc)
+                    throw new InvalidOperationException("Abra um projeto no Revit.");
+
+                return TextureMaterialTools.PickMaterialFromFace(uidoc);
+            });
+
+            if (picked.Cancelled)
+            {
+                Status = string.Empty;
+            }
+            else if (picked.MaterialId is null || !picked.IsUnSet)
+            {
+                Fail("Essa face não usa um material do UnSet BIM.");
+            }
+            else
+            {
+                await RefreshAsync(picked.MaterialId);
+                Status = "Material da face aberto.";
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Picking a material from a face failed.", ex);
+            Fail("Não foi possível ler a face. Detalhes foram gravados no log do UnSet BIM.");
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }
+
+    /// <summary>Click painted faces to remove their paint (any material, not only UnSet ones).</summary>
+    private async Task RemovePaintAsync()
+    {
+        await FlushPendingAsync();
+        IsWorking = true;
+        Status = "Clique nas faces pintadas no Revit. Esc para terminar.";
+        StatusIsError = false;
+
+        try
+        {
+            var result = await _host.Revit.InvokeAsync(app =>
+            {
+                if (app.ActiveUIDocument is not { } uidoc)
+                    throw new InvalidOperationException("Abra um projeto no Revit.");
+
+                return FacePainter.RemovePaint(uidoc);
+            });
+
+            Status = result.Painted switch
+            {
+                0 when result.Skipped == 0 => "Nenhuma pintura removida.",
+                0 => "As faces clicadas não estavam pintadas.",
+                1 => "Pintura removida de 1 face.",
+                var n => $"Pintura removida de {n} faces.",
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Removing paint failed.", ex);
+            Fail("Não foi possível remover a pintura. Detalhes foram gravados no log do UnSet BIM.");
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }
+
+    /// <summary>Deletes the selected material from the project, after confirmation.</summary>
+    private async Task DeleteMaterialAsync()
+    {
+        if (Selected is not { } target)
+            return;
+
+        var choice = UnSetBim.Framework.Dialogs.MessageDialog.Show(
+            "Excluir material",
+            $"Excluir \"{target.Name}\" do projeto?\n\nAs faces pintadas com ele voltam ao material original do elemento, "
+            + "e o que usava este material passa para \"Por categoria\". Dá para desfazer com Ctrl+Z no Revit.",
+            UnSetBim.Framework.Dialogs.DialogKind.Warning,
+            "Excluir", "Cancelar");
+
+        if (choice != 0)
+            return;
+
+        _applyTimer.Stop();
+        IsWorking = true;
+
+        try
+        {
+            var name = await _host.Revit.InvokeAsync(app =>
+            {
+                if (app.ActiveUIDocument?.Document is not { } doc)
+                    throw new InvalidOperationException("Abra o projeto deste material no Revit.");
+
+                return TextureMaterialTools.DeleteMaterial(doc, target.Id);
+            });
+
+            await RefreshAsync(null);
+            Status = $"Material \"{name}\" excluído.";
+            StatusIsError = false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Deleting material {target.Id} failed.", ex);
+            Fail("Não foi possível excluir o material. Detalhes foram gravados no log do UnSet BIM.");
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }
+
+    /// <summary>Applies a pending edit before an action that depends on the current settings.</summary>
+    private async Task FlushPendingAsync()
+    {
+        if (!_applyTimer.IsEnabled)
+            return;
+
+        _applyTimer.Stop();
+        await ApplyAsync();
     }
 
     private void ResetSize()

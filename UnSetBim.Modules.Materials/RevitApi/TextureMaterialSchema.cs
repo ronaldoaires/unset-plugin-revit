@@ -65,7 +65,11 @@ internal static class TextureMaterialSchema
         element.SetEntity(entity);
     }
 
-    /// <summary>Materials of the document created from <paramref name="slug"/>.</summary>
+    /// <summary>
+    /// The main material of <paramref name="slug"/>: the oldest one (lowest id). Variations made
+    /// later carry the same marker but are never picked here, so applying the texture again from
+    /// the library never changes them.
+    /// </summary>
     public static Material? FindMaterial(Document doc, string slug)
     {
         if (Schema.Lookup(SchemaGuid) is null)
@@ -74,6 +78,8 @@ internal static class TextureMaterialSchema
         return new FilteredElementCollector(doc)
             .OfClass(typeof(Material))
             .Cast<Material>()
-            .FirstOrDefault(m => Read(m)?.Slug == slug);
+            .Where(m => Read(m)?.Slug == slug)
+            .OrderBy(m => m.Id.Value)
+            .FirstOrDefault();
     }
 }

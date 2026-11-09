@@ -5,8 +5,8 @@ using UnSetBim.Modules.Materials.Views;
 namespace UnSetBim.Modules.Materials;
 
 /// <summary>
-/// Materials module: panel "Materiais" with the textures window. Kept out of the "Arquitetura"
-/// panel on purpose so it does not look tied to the architectural plan.
+/// Materials module: panel "Materiais" with the textures dockable pane. Kept out of the
+/// "Arquitetura" panel on purpose so it does not look tied to the architectural plan.
 /// </summary>
 public sealed class MaterialsModule : IUnSetModule
 {
@@ -21,15 +21,18 @@ public sealed class MaterialsModule : IUnSetModule
 
     public void OnStartup(ModuleContext context)
     {
+        // Dockable panes can only be registered here, during Revit startup.
+        context.Application.RegisterDockablePane(TexturesPane.PaneId, "UnSet BIM — Texturas", new TexturesPaneProvider());
+
         var panel = context.CreatePanel("Materiais");
 
         panel.AddItem(ModuleContext.CreateButton<OpenTexturesCommand>(
             name: "UnSetBim.Materials.Textures",
             text: "Texturas",
-            tooltip: "Escolha uma textura do UnSet BIM, crie o material no tamanho real e pinte as faces do modelo com um clique.",
+            tooltip: "Abre o painel de texturas do UnSet BIM (ao lado de Propriedades): crie materiais no tamanho real, pinte faces, ajuste e crie variações.",
             largeIcon: IconBase + "textures_32.png",
             smallIcon: IconBase + "textures_16.png"));
     }
 
-    public void OnShutdown() => TexturesWindow.CloseIfOpen();
+    public void OnShutdown() => TexturesPane.Shutdown();
 }

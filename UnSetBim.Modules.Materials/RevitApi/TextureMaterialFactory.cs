@@ -85,7 +85,7 @@ internal static class TextureMaterialFactory
         return (Material)doc.GetElement(Material.Create(doc, name));
     }
 
-    private static string UniqueMaterialName(Document doc, string baseName)
+    internal static string UniqueMaterialName(Document doc, string baseName)
     {
         var names = new FilteredElementCollector(doc).OfClass(typeof(Material)).Select(m => m.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -115,11 +115,11 @@ internal static class TextureMaterialFactory
         return baseAppearance.Duplicate(UniqueAppearanceName(doc, NamePrefix + textureName));
     }
 
-    private static int UsersOf(Document doc, ElementId appearanceId) =>
+    internal static int UsersOf(Document doc, ElementId appearanceId) =>
         new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>()
             .Count(m => m.AppearanceAssetId == appearanceId);
 
-    private static string UniqueAppearanceName(Document doc, string baseName)
+    internal static string UniqueAppearanceName(Document doc, string baseName)
     {
         var name = Sanitize(baseName);
         for (var i = 2; AppearanceAssetElement.GetAppearanceAssetElementByName(doc, name) is not null; i++)

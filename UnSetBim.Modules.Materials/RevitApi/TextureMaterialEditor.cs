@@ -139,6 +139,9 @@ internal static class TextureMaterialEditor
 
         try
         {
+            // Never change another material that shares this appearance.
+            appearance = TextureMaterialTools.EnsureOwnAppearance(doc, material, appearance);
+
             using (var scope = new AppearanceAssetEditScope(doc))
             {
                 var asset = scope.Start(appearance.Id);
